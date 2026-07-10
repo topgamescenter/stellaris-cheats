@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Match — A Gentle Game</title>
+<style>
+  :root {
+    --bg: #fdf6ec;
+    --card-back: #4a6fa5;
+    --card-back-dark: #375a8c;
+    --card-face: #ffffff;
+    --accent: #2e7d32;
+    --text: #22303c;
+    --matched: #d7f0d9;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    font-family: "Segoe UI", Verdana, Arial, sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+  }
+
+  h1 {
+    font-size: 2.4rem;
+    margin: 8px 0 4px;
+    text-align: center;
+  }
+
+  p.subtitle {
+    font-size: 1.3rem;
+    margin: 0 0 20px;
+    text-align: center;
+    max-width: 600px;
+  }
+
+  .status-bar {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
+  .status-bar span {
+    background: white;
+    padding: 10px 20px;
+    border-radius: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    max-width: 640px;
+    width: 100%;
+  }
+
+  .card {
+    aspect-ratio: 1 / 1;
+    border-radius: 18px;
+    background: var(--card-back);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    user-select: none;
+    transition: transform 0.15s ease, background 0.3s ease;
+    border: none;
+    padding: 0;
+  }
+
+  .card:hover:not(.matched):not(.flipped) {
+    transform: scale(1.04);
+    background: var(--card-back-dark);
+  }
+
+  .card:focus-visible {
+    outline: 4px solid #ffb300;
+    outline-offset: 3px;
+  }
+
+  .card.flipped, .card.matched {
+    background: var(--card-face);
+    cursor: default;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+
+  .card.matched {
+    background: var(--matched);
+    transform: scale(0.97);
+  }
+
+  .card .symbol {
+    display: none;
+  }
+
+  .card.flipped .symbol, .card.matched .symbol {
+    display: block;
+    animation: pop 0.25s ease;
+  }
+
+  @keyframes pop {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .controls {
+    margin-top: 28px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button.action {
+    font-size: 1.3rem;
+    padding: 14px 28px;
+    border-radius: 14px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  }
+
+  button.action:hover {
+    background: #245e27;
+  }
+
+  button.action:focus-visible {
+    outline: 4px solid #ffb300;
+    outline-offset: 3px;
+  }
+
+  #message {
+    margin-top: 20px;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: var(--accent);
+    text-align: center;
+    min-height: 2.2rem;
+  }
+
+  select {
+    font-size: 1.2rem;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 2px solid #ccc;
+  }
+
+  @media (max-width: 480px) {
+    #board {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .card { font-size: 2.2rem; }
+    h1 { font-size: 1.9rem; }
+    p.subtitle { font-size: 1.05rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🌼 Memory Match 🌼</h1>
+<p class="subtitle">Find the matching pairs. Take your time — there's no rush!</p>
+
+<div class="status-bar">
+  <span>Moves: <span id="moves">0</span></span>
+  <span>Pairs found: <span id="pairs">0</span> / <span id="totalPairs">6</span></span>
+</div>
+
+<div id="board" role="grid" aria-label="Memory match game board"></div>
+
+<div id="message" role="status" aria-live="polite"></div>
+
+<div class="controls">
+  <label for="difficulty">Number of pairs:
+    <select id="difficulty">
+      <option value="6" selected>6 (easier)</option>
+      <option value="8">8 (medium)</option>
+    </select>
+  </label>
+  <button class="action" id="newGame">New Game</button>
+</div>
+
+<script>
+  const SYMBOL_SETS = ["🌸","🍎","🐶","☀️","🎵","⭐","🍀","🐦","🌈","🎈","🍉","🐝"];
+
+  const board = document.getElementById("board");
+  const movesEl = document.getElementById("moves");
+  const pairsEl = document.getElementById("pairs");
+  const totalPairsEl = document.getElementById("totalPairs");
+  const messageEl = document.getElementById("message");
+  const newGameBtn = document.getElementById("newGame");
+  const difficultySelect = document.getElementById("difficulty");
+
+  let firstCard = null;
+  let secondCard = null;
+  let lockBoard = false;
+  let moves = 0;
+  let matchedPairs = 0;
+  let totalPairs = 6;
+
+  let audioCtx = null;
+  function playTone(freq, duration = 0.15) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) { /* audio not available, ignore */ }
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function buildBoard() {
+    totalPairs = parseInt(difficultySelect.value, 10);
+    totalPairsEl.textContent = totalPairs;
+    moves = 0;
+    matchedPairs = 0;
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+    movesEl.textContent = moves;
+    pairsEl.textContent = matchedPairs;
+    messageEl.textContent = "";
+
+    const chosenSymbols = shuffle(SYMBOL_SETS.slice()).slice(0, totalPairs);
+    const deck = shuffle([...chosenSymbols, ...chosenSymbols]);
+
+    board.style.gridTemplateColumns = totalPairs <= 6 ? "repeat(4, 1fr)" : "repeat(4, 1fr)";
+    board.innerHTML = "";
+
+    deck.forEach((symbol, index) => {
+      const card = document.createElement("button");
+      card.className = "card";
+      card.setAttribute("data-symbol", symbol);
+      card.setAttribute("aria-label", "Face-down card");
+      card.innerHTML = `<span class="symbol">${symbol}</span>`;
+      card.addEventListener("click", () => onCardClick(card));
+      board.appendChild(card);
+    });
+  }
+
+  function onCardClick(card) {
+    if (lockBoard) return;
+    if (card.classList.contains("flipped") || card.classList.contains("matched")) return;
+
+    card.classList.add("flipped");
+    card.setAttribute("aria-label", "Card showing " + card.getAttribute("data-symbol"));
+    playTone(500, 0.08);
+
+    if (!firstCard) {
+      firstCard = card;
+      return;
+    }
+
+    secondCard = card;
+    moves++;
+    movesEl.textContent = moves;
+    lockBoard = true;
+
+    const isMatch = firstCard.getAttribute("data-symbol") === secondCard.getAttribute("data-symbol");
+
+    if (isMatch) {
+      setTimeout(() => {
+        firstCard.classList.add("matched");
+        secondCard.classList.add("matched");
+        firstCard.setAttribute("aria-label", "Matched card " + firstCard.getAttribute("data-symbol"));
+        secondCard.setAttribute("aria-label", "Matched card " + secondCard.getAttribute("data-symbol"));
+        matchedPairs++;
+        pairsEl.textContent = matchedPairs;
+        playTone(750, 0.2);
+        resetTurn();
+        checkWin();
+      }, 400);
+    } else {
+      playTone(220, 0.25);
+      setTimeout(() => {
+        firstCard.classList.remove("flipped");
+        secondCard.classList.remove("flipped");
+        firstCard.setAttribute("aria-label", "Face-down card");
+        secondCard.setAttribute("aria-label", "Face-down card");
+        resetTurn();
+      }, 900);
+    }
+  }
+
+  function resetTurn() {
+    firstCard = null;
+    secondCard = null;
+    lockBoard = false;
+  }
+
+  function checkWin() {
+    if (matchedPairs === totalPairs) {
+      messageEl.textContent = `🎉 Well done! You finished in ${moves} moves! 🎉`;
+      playTone(880, 0.3);
+      setTimeout(() => playTone(1100, 0.3), 250);
+    }
+  }
+
+  newGameBtn.addEventListener("click", buildBoard);
+  difficultySelect.addEventListener("change", buildBoard);
+
+  buildBoard();
+</script>
+
+</body>
+</html>
