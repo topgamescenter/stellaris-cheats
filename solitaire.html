@@ -6,17 +6,25 @@
 <title>Solitaire — A Gentle Game</title>
 <style>
   :root {
-    --bg: #fdf6ec;
-    --felt: #2e7d4f;
-    --felt-dark: #245e3d;
-    --card-back: #4a6fa5;
-    --card-back-pattern: #375a8c;
-    --card-face: #ffffff;
+    --bg-1: #efe3cf;
+    --bg-2: #d9c6a3;
+    --felt-1: #3a9163;
+    --felt-2: #1f5c3d;
+    --felt-edge: #163f2a;
+    --card-back-1: #4a6fa5;
+    --card-back-2: #2f4d7a;
+    --card-face-1: #ffffff;
+    --card-face-2: #eef1f6;
     --accent: #2e7d32;
+    --accent-dark: #245e27;
     --text: #22303c;
-    --red: #c62828;
-    --black: #20272e;
-    --slot-border: #ffffffaa;
+    --red: #b8272c;
+    --black: #1b2430;
+    --slot-border: #ffffff99;
+    --gold: #ffb300;
+
+    --card-w: clamp(60px, 8.4vw, 124px);
+    --card-h: clamp(86px, 12vw, 176px);
   }
 
   * { box-sizing: border-box; }
@@ -24,7 +32,9 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse at top, #fffaf0 0%, transparent 55%),
+      linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
     font-family: "Segoe UI", Verdana, Arial, sans-serif;
     color: var(--text);
     display: flex;
@@ -34,9 +44,11 @@
   }
 
   h1 {
-    font-size: 2.2rem;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.8rem, 3.2vw, 2.6rem);
     margin: 4px 0 4px;
     text-align: center;
+    text-shadow: 0 2px 3px rgba(0,0,0,0.15);
   }
 
   p.subtitle {
@@ -57,10 +69,10 @@
   }
 
   .status-bar span {
-    background: white;
+    background: #ffffff;
     padding: 8px 18px;
     border-radius: 14px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
   }
 
   .controls {
@@ -76,48 +88,54 @@
     padding: 12px 22px;
     border-radius: 14px;
     border: none;
-    background: var(--accent);
+    background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
     color: white;
     cursor: pointer;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.25);
   }
 
-  button.action:hover { background: #245e27; }
-  button.action:disabled { background: #9aa79a; cursor: default; }
-  button.action:focus-visible { outline: 4px solid #ffb300; outline-offset: 3px; }
+  button.action:hover { filter: brightness(1.08); }
+  button.action:disabled { background: #9aa79a; cursor: default; filter: none; }
+  button.action:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
 
   #message {
     font-size: 1.5rem;
     font-weight: bold;
-    color: var(--accent);
+    color: var(--accent-dark);
     text-align: center;
     min-height: 2rem;
     margin-bottom: 10px;
   }
 
   #table {
-    background: var(--felt);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    background:
+      radial-gradient(ellipse at 50% 35%, var(--felt-1) 0%, var(--felt-2) 75%, var(--felt-edge) 100%);
+    border-radius: 24px;
+    padding: clamp(14px, 2.2vw, 30px);
+    box-shadow:
+      inset 0 0 0 6px rgba(255,255,255,0.06),
+      inset 0 2px 18px rgba(0,0,0,0.35),
+      0 10px 26px rgba(0,0,0,0.35);
     width: 100%;
-    max-width: 980px;
+    max-width: 1220px;
   }
 
   .top-row {
     display: flex;
-    gap: 14px;
-    margin-bottom: 26px;
+    gap: clamp(8px, 1.4vw, 16px);
+    margin-bottom: clamp(20px, 3vw, 34px);
     flex-wrap: wrap;
   }
 
   .top-row .spacer { flex: 1 1 auto; min-width: 14px; }
 
   .pile-slot {
-    width: 88px;
-    height: 124px;
+    width: var(--card-w);
+    height: var(--card-h);
     border: 3px dashed var(--slot-border);
     border-radius: 12px;
+    background: rgba(0,0,0,0.08);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.25);
     position: relative;
     flex: 0 0 auto;
   }
@@ -128,24 +146,42 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.4rem;
+    font-size: clamp(1.6rem, 2.6vw, 2.4rem);
     color: var(--slot-border);
     pointer-events: none;
   }
 
-  .card {
-    width: 88px;
-    height: 124px;
+  .recycle-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+    color: white;
+    cursor: pointer;
+  }
+
+  .recycle-hint:focus-visible {
+    outline: 4px solid var(--gold);
+    outline-offset: 2px;
     border-radius: 12px;
-    background: var(--card-face);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.35);
+  }
+
+  .card {
+    width: var(--card-w);
+    height: var(--card-h);
+    border-radius: 12px;
+    background: linear-gradient(160deg, var(--card-face-1) 0%, var(--card-face-2) 100%);
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 3px 3px rgba(0,0,0,0.15), 0 6px 10px rgba(0,0,0,0.3);
     position: absolute;
     top: 0;
     left: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 6px 8px;
+    padding: clamp(4px, 0.8vw, 8px) clamp(5px, 1vw, 9px);
     font-weight: bold;
     cursor: pointer;
     user-select: none;
@@ -153,14 +189,14 @@
   }
 
   .card:focus-visible {
-    outline: 4px solid #ffb300;
+    outline: 4px solid var(--gold);
     outline-offset: 2px;
   }
 
   .card.red { color: var(--red); }
   .card.black { color: var(--black); }
 
-  .card .corner { font-size: 1.4rem; line-height: 1; }
+  .card .corner { font-size: clamp(0.85rem, 1.5vw, 1.4rem); line-height: 1; }
   .card .corner.bottom { align-self: flex-end; transform: rotate(180deg); }
   .card .center-suit {
     position: absolute;
@@ -168,49 +204,63 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.6rem;
-    opacity: 0.85;
+    font-size: clamp(1.5rem, 3vw, 2.6rem);
+    opacity: 0.8;
   }
 
   .card.face-down {
-    background: var(--card-back);
-    background-image: repeating-linear-gradient(45deg, var(--card-back-pattern), var(--card-back-pattern) 8px, var(--card-back) 8px, var(--card-back) 16px);
+    background: linear-gradient(160deg, var(--card-back-1) 0%, var(--card-back-2) 100%);
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.07) 0, rgba(255,255,255,0.07) 6px, transparent 6px, transparent 14px),
+      linear-gradient(160deg, var(--card-back-1) 0%, var(--card-back-2) 100%);
+    border: 1px solid rgba(255,255,255,0.25);
     cursor: pointer;
   }
 
+  .card.face-down::after {
+    content: "";
+    position: absolute;
+    inset: 12%;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-radius: 8px;
+  }
+
   .card.selected {
-    box-shadow: 0 0 0 4px #ffb300, 0 5px 10px rgba(0,0,0,0.4);
+    box-shadow: 0 0 0 4px var(--gold), 0 5px 10px rgba(0,0,0,0.4);
     transform: translateY(-6px);
   }
 
   .tableau-row {
     display: flex;
-    gap: 14px;
+    justify-content: space-between;
+    gap: clamp(6px, 1.4vw, 16px);
   }
 
   .tableau-col {
-    width: 88px;
-    min-height: 124px;
+    width: var(--card-w);
+    min-height: var(--card-h);
     position: relative;
     flex: 0 0 auto;
   }
 
   .empty-col-hint {
-    width: 88px;
-    height: 124px;
+    width: var(--card-w);
+    height: var(--card-h);
     border: 3px dashed var(--slot-border);
     border-radius: 12px;
+    background: rgba(0,0,0,0.08);
     position: absolute;
     top: 0; left: 0;
   }
 
-  @media (max-width: 760px) {
-    .card, .pile-slot, .tableau-col, .empty-col-hint { width: 46px; height: 66px; }
-    .card .corner { font-size: 0.85rem; }
-    .card .center-suit { font-size: 1.4rem; }
-    .top-row { gap: 8px; margin-bottom: 22px; }
-    .tableau-row { gap: 8px; }
-    #table { padding: 12px; }
+  @media (max-width: 480px) {
+    :root {
+      --card-w: clamp(34px, 11vw, 56px);
+      --card-h: clamp(48px, 15.6vw, 80px);
+    }
+    .top-row { gap: 4px; }
+    .tableau-row { gap: 4px; }
+    #table { padding: 8px; overflow-x: auto; }
   }
 </style>
 </head>
@@ -253,8 +303,17 @@
   const SUIT_SYMBOL = { S: "♠", H: "♥", D: "♦", C: "♣" };
   const SUIT_COLOR = { S: "black", H: "red", D: "red", C: "black" };
   const RANK_LABEL = { 1: "A", 11: "J", 12: "Q", 13: "K" };
-  const FACE_UP_OFFSET = 26;
-  const FACE_DOWN_OFFSET = 12;
+
+  function getCardHeight() {
+    const probe = document.createElement("div");
+    probe.className = "card";
+    probe.style.visibility = "hidden";
+    probe.style.position = "fixed";
+    document.body.appendChild(probe);
+    const h = probe.offsetHeight;
+    probe.remove();
+    return h;
+  }
 
   let stock = [];
   let waste = [];
@@ -591,12 +650,17 @@
     if (stock.length) {
       const el = makeCardEl({ faceUp: false }, { source: "stock" }, true);
       stockSlot.appendChild(el);
-    } else {
-      stockSlot.style.cursor = "pointer";
-      stockSlot.onclick = drawFromStock;
+    } else if (waste.length) {
       const hint = document.createElement("div");
-      hint.className = "foundation-icon";
+      hint.className = "recycle-hint";
       hint.textContent = "↺";
+      hint.tabIndex = 0;
+      hint.setAttribute("role", "button");
+      hint.setAttribute("aria-label", "Reshuffle waste pile back into the stock");
+      hint.addEventListener("click", drawFromStock);
+      hint.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); drawFromStock(); }
+      });
       stockSlot.appendChild(hint);
     }
 
@@ -622,6 +686,10 @@
       }
     }
 
+    const cardH = getCardHeight();
+    const faceUpOffset = cardH * 0.21;
+    const faceDownOffset = cardH * 0.1;
+
     const tableauRow = document.getElementById("tableauRow");
     tableauRow.innerHTML = "";
     tableau.forEach((colCards, colIdx) => {
@@ -640,9 +708,9 @@
         const el = makeCardEl(card, { source: "tableau", col: colIdx, index: idx }, card.faceUp);
         el.style.top = offset + "px";
         colEl.appendChild(el);
-        offset += card.faceUp ? FACE_UP_OFFSET : FACE_DOWN_OFFSET;
+        offset += card.faceUp ? faceUpOffset : faceDownOffset;
       });
-      colEl.style.minHeight = (Math.max(124, offset + 124 - FACE_UP_OFFSET)) + "px";
+      colEl.style.minHeight = (Math.max(cardH, offset + cardH - faceUpOffset)) + "px";
 
       tableauRow.appendChild(colEl);
     });
